@@ -1,0 +1,33 @@
+name: Build Among Us Mod
+
+on:
+  push:
+    branches: [ "main", "główny" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v2
+
+    - name: Setup NuGet
+      uses: nuget/setup-nuget@v1
+      
+    - name: Restore NuGet Packages
+      run: nuget restore TOU-Mira.sln
+
+    - name: Build Mod DLL
+      run: msbuild TOU-Mira.sln /p:Configuration=Release
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: TransporterMod-DLL
+        path: "**/bin/Release/**/*.dll"
+
