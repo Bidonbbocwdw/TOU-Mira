@@ -1,48 +1,40 @@
 
-using System.Collections;
+using System;
+using MiraAPI.Patches.Stubs;
+using MiraAPI.Roles;
+using TownOfUs.Modules;
 using UnityEngine;
 
-public class TransporterAbility : MonoBehaviour
-{
-    public float cooldown = 20f;
-    private float nextUseTime = 0f;
+namespace TownOfUs.Roles.Impostor;
 
-    public bool CanUse()
+public sealed class TransporterRole(IntPtr cppPtr)
+    : ImpostorRole(cppPtr), ITownOfUsRole
+{
+    public string IdPart => "Transporter";
+
+    public Color RoleColor => TownOfUsColors.Impostor;
+
+    public ModdedRoleTeams Team => ModdedRoleTeams.Impostor;
+
+    public RoleAlignment RoleAlignment =>
+        RoleAlignment.ImpostorKilling;
+
+    public CustomRoleConfiguration Configuration =>
+        new(this)
+        {
+            CanUseVent = true,
+            CanUseSabotage = true
+        };
+
+    public override void Initialize(PlayerControl player)
     {
-        return Time.time >= nextUseTime;
+        RoleBehaviourStubs.Initialize(this, player);
     }
 
-    public bool TeleportToNearestVent(
-        Transform player,
-        Transform[] vents)
+    public override void Deinitialize(PlayerControl targetPlayer)
     {
-        if (!CanUse() || player == null || vents == null)
-            return false;
-
-        Transform nearestVent = null;
-        float nearestDistance = float.MaxValue;
-
-        foreach (Transform vent in vents)
-        {
-            if (vent == null)
-                continue;
-
-            float distance = Vector2.Distance(
-                player.position, vent.position);
-
-            if (distance < nearestDistance)
-            {
-                nearestDistance = distance;
-                nearestVent = vent;
-            }
-        }
-
-        if (nearestVent == null)
-            return false;
-
-        player.position = nearestVent.position;
-        nextUseTime = Time.time + cooldown;
-
-        return true;
+        RoleBehaviourStubs.Deinitialize(this, targetPlayer);
     }
 }
+
+          
