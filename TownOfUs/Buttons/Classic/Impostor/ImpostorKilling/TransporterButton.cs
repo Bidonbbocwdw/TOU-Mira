@@ -1,38 +1,66 @@
 
-using System;
-using MiraAPI.Patches.Stubs;
-using MiraAPI.Roles;
+using Mira.CustomButtons;
+using Mira.Assets;
 using TownOfUs.Modules;
+using TownOfUs.Roles.Impostor;
 using UnityEngine;
 
-namespace TownOfUs.Roles.Impostor;
+namespace TownOfUs.Buttons.Impostor;
 
-public sealed class TransporterRole(IntPtr cppPtr)
-    : ImpostorRole(cppPtr), ITownOfUsRole
+[RegisterButton]
+public sealed class TransporterButton : CustomActionButton
 {
-    public string IdPart => "Transporter";
+    public override string Name => "Transporter";
 
-    public Color RoleColor => TownOfUsColors.Impostor;
+    public override float Cooldown => 20f;
 
-    public ModdedRoleTeams Team => ModdedRoleTeams.Impostor;
+    public override float EffectDuration => 0f;
 
-    public RoleAlignment RoleAlignment =>
-        RoleAlignment.ImpostorKilling;
+    public override int MaxUses => 0;
 
-    public CustomRoleConfiguration Configuration =>
-        new(this)
-        {
-            CanUseVent = true,
-            CanUseSabotage = true
-        };
+    public override LoadableAsset<Sprite> Sprite =>
+        TouImpAssets.PursueSprite;
 
-    public override void Initialize(PlayerControl player)
+    public override bool Enabled(RoleBehaviour? role)
     {
-        RoleBehaviourStubs.Initialize(this, player);
+        return role is TransporterRole;
     }
 
-    public override void Deinitialize(PlayerControl targetPlayer)
+    protected override void OnClick()
     {
-        RoleBehaviourStubs.Deinitialize(this, targetPlayer);
+        PlayerControl player = PlayerControl.LocalPlayer;
+
+        if (player == null || player.Data == null ||
+            player.Data.IsDead || ShipStatus.Instance == null)
+        {
+            return;
+        }
+
+        Vent nearestVent = null;
+        float nearestDistance = float.MaxValue;
+
+        foreach (Vent vent in ShipStatus.Instance.AllVents)
+        {
+            if (vent == null)
+                continue;
+
+            float distance = Vector2.Distance(
+                player.transform.position,
+                vent.transform.position);
+
+            if (distance < nearestDistance)
+            {
+                nearestDistance = distance;
+                nearestVent = vent;
+            }
+        }
+
+        if (nearestVent == null)
+            return;
+
+        player.NetTransform.RpcSnapTo(
+            nearestVent.transform.position);
     }
 }
+
+
