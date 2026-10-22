@@ -1,48 +1,50 @@
 
-using Mira.CustomButtons;
-using Mira.Assets;
+using MiraAPI.Hud;
 using TownOfUs.Modules;
 using TownOfUs.Roles.Impostor;
 using UnityEngine;
 
 namespace TownOfUs.Buttons.Impostor;
 
-[RegisterButton]
-public sealed class TransporterButton : CustomActionButton
+public sealed class TransporterButton : TownOfUsRoleButton<TransporterRole>
 {
-    public override string Name => "Transporter";
+    public override string Name =>
+        MiraLocaleManager.Get("TownOfUsMira.Role.Transporter", "Teleport");
+
+    public override BaseKeybind Keybind => Keybinds.SecondaryAction;
+
+    public override Color TextOutlineColor => TownOfUsColors.Impostor;
 
     public override float Cooldown => 20f;
 
-    public override float EffectDuration => 0f;
+    public override LoadableAsset<Sprite> Sprite => TouImpAssets.PursueSprite;
 
-    public override int MaxUses => 0;
-
-    public override LoadableAsset<Sprite> Sprite =>
-        TouImpAssets.PursueSprite;
-
-    public override bool Enabled(RoleBehaviour? role)
+    public override bool CanUse()
     {
-        return role is TransporterRole;
+        return base.CanUse()
+            && PlayerControl.LocalPlayer != null
+            && !PlayerControl.LocalPlayer.Data.IsDead
+            && ShipStatus.Instance != null;
     }
 
     protected override void OnClick()
     {
         PlayerControl player = PlayerControl.LocalPlayer;
 
-        if (player == null || player.Data == null ||
-            player.Data.IsDead || ShipStatus.Instance == null)
+        if (player == null || player.Data == null || player.Data.IsDead)
         {
             return;
         }
 
-        Vent nearestVent = null;
+        Vent? nearestVent = null;
         float nearestDistance = float.MaxValue;
 
         foreach (Vent vent in ShipStatus.Instance.AllVents)
         {
             if (vent == null)
+            {
                 continue;
+            }
 
             float distance = Vector2.Distance(
                 player.transform.position,
@@ -56,11 +58,10 @@ public sealed class TransporterButton : CustomActionButton
         }
 
         if (nearestVent == null)
+        {
             return;
+        }
 
-        player.NetTransform.RpcSnapTo(
-            nearestVent.transform.position);
+        player.NetTransform.RpcSnapTo(nearestVent.transform.position);
     }
 }
-
-
